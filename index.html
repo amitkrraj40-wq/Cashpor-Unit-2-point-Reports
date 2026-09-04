@@ -309,6 +309,15 @@ const NAME_ROLE_MAP = {};
 AGENT_NAMES.forEach(n => NAME_ROLE_MAP[normName(n)] = "Agent");
 PHARMACIST_NAMES.forEach(n => NAME_ROLE_MAP[normName(n)] = "Pharmacist");
 
+// Whichever way a name is spelled/spaced/cased in a given day's uploaded file, always
+// resolve back to the one canonical spelling from the whitelist above. Without this,
+// the same person could be saved under slightly different keys on different days
+// (e.g. an extra space or different casing), splitting their attendance history in two.
+const NAME_CANON_MAP = {};
+AGENT_NAMES.forEach(n => NAME_CANON_MAP[normName(n)] = n);
+PHARMACIST_NAMES.forEach(n => NAME_CANON_MAP[normName(n)] = n);
+function canonName(s){ return NAME_CANON_MAP[normName(s)] || s; }
+
 let dataByRole = {};   // { "Agent": [agentObj, ...], "Pharmacist": [...] }
 let roleOrder = [];
 let currentView = null;
@@ -369,6 +378,7 @@ function objectsToAgents(rows){
 
     const role = NAME_ROLE_MAP[normName(name)];
     if(!role) continue; // not on either whitelist — skip
+    const canonicalName = canonName(name);
 
     const bookedConsults = numToNum(getVal(r, "Booked Consults"));
     const doneConsults = numToNum(getVal(r, "Done Consults"));
@@ -387,7 +397,7 @@ function objectsToAgents(rows){
     const connImmPts = connImmCount * WEIGHTS.connImm;
 
     const agentObj = {
-      name, bookedConsults, doneConsults, callCount, callPts, clinicCount, clinicPts,
+      name: canonicalName, bookedConsults, doneConsults, callCount, callPts, clinicCount, clinicPts,
       connFdbCount, connFdbPts, connImmCount, connImmPts, fdbTotal, immTotal, missing: false,
       total: callPts + clinicPts + connFdbPts + connImmPts
     };
@@ -687,8 +697,6 @@ function loadMonthlySummary(){
     else if(attnSortKey === 'pct') rows.sort((a,b)=> a.pct - b.pct || a.name.localeCompare(b.name));
     else rows.sort((a,b)=> a.name.localeCompare(b.name));
 
-    const maxAbsent = rows.length ? rows[0].absent : 0;
-
     // e.g. "05, 12, 19" — just the day-of-month since the table is already scoped to one month.
     function fmtLeaveDates(dates){
       if(!dates.length) return '<span style="color:var(--text-faint)">—</span>';
@@ -698,7 +706,7 @@ function loadMonthlySummary(){
     board.innerHTML = rows.map((r,i) => `
       <tr>
         <td style="text-align:left;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;">${i+1}</td>
-        <td style="text-align:left;font-family:'Inter';font-weight:600;">${titleCase(r.name)}${(attnSortKey==='leaves' && r.absent===maxAbsent && maxAbsent>0) ? ' <span class="badge below" style="margin-left:6px">Most leaves</span>' : ''}</td>
+        <td style="text-align:left;font-family:'Inter';font-weight:600;">${titleCase(r.name)}${(attnSortKey==='leaves' && i===0 && r.absent>0) ? ' <span class="badge below" style="margin-left:6px">Most leaves</span>' : ''}</td>
         <td style="text-align:left;color:var(--text-muted)">${r.role}</td>
         <td style="color:var(--success);font-weight:600;">${r.present}</td>
         <td style="color:var(--coral);font-weight:600;">${r.absent}</td>
