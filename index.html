@@ -54,6 +54,7 @@ h1{font-family:'Sora',sans-serif;font-weight:800;font-size:22px;margin:0;color:v
 table{width:100%;border-collapse:collapse;min-width:820px}
 thead th{position:sticky;top:0;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#E4EAF5;text-align:right;padding:12px 14px;background:var(--navy);white-space:nowrap}
 thead th:nth-child(1),thead th:nth-child(2){text-align:left}
+.th-ic{width:12px;height:12px;margin-right:6px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 tbody td{padding:10px 13px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--primary-soft)}
@@ -66,6 +67,9 @@ tr[data-tier="3"] td:nth-child(1){color:#D2986A;font-weight:700}
 td.total{color:var(--primary);font-weight:700;font-size:14px}
 .sub-pt{display:block;color:var(--text-faint);font-size:10px}
 .main-count{font-weight:700;color:var(--text)}
+.hl{display:inline-block;min-width:42px;padding:3px 10px;border-radius:8px;font-weight:700;font-size:13px;text-align:center}
+.hl-booked{background:rgba(27,44,97,.09);color:var(--navy)}
+.hl-done{background:var(--success-soft);color:#0A6E5C}
 .pctcell{display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .bar-track{width:56px;height:5px;border-radius:4px;background:var(--surface-2);overflow:hidden}
 .bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--primary),var(--success))}
@@ -335,7 +339,11 @@ const currentTarget = () => DAILY_TARGET * Math.max(1, parseInt($('daysInput').v
 
 function renderHead(){
   const cols = ['#','Agent','Booked','Done','Video Call','Call','FDB','IMM','Conn Fdb','Conn Imm','Total Pts','vs Target'];
-  $('tableHead').innerHTML = cols.map((c,i) => `<th style="${i<2?'text-align:left':''}">${c}</th>`).join('');
+  const icons = {
+    'Video Call': '<svg class="th-ic" viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+    'Call': '<svg class="th-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+  };
+  $('tableHead').innerHTML = cols.map((c,i) => `<th style="${i<2?'text-align:left':''}">${icons[c]||''}${c}</th>`).join('');
 }
 
 function updateHero(){
@@ -380,8 +388,8 @@ function render(){
     return `<tr data-tier="${tier}" style="${a.missing?'opacity:.55':''}">
       <td>${rank}</td>
       <td>${titleCase(a.name)}${a.missing?' <span class="badge below" style="margin-left:6px">No data</span>':''}</td>
-      <td style="color:var(--text-faint)">${fmt(a.bookedConsults)}</td>
-      <td style="color:var(--text-faint)">${fmt(a.doneConsults)}</td>
+      <td><span class="hl hl-booked">${fmt(a.bookedConsults)}</span></td>
+      <td><span class="hl hl-done">${fmt(a.doneConsults)}</span></td>
       <td><span class="main-count">${a.clinicCount}</span><span class="sub-pt">${fmt(a.clinicPts)} pt</span></td>
       <td><span class="main-count">${a.callCount}</span><span class="sub-pt">${fmt(a.callPts)} pt</span></td>
       <td style="color:var(--text-faint)">${fmt(a.fdbTotal)}</td>
